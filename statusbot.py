@@ -22,15 +22,15 @@ cnx.sendInitPresence()
 
 
 while (True):
-        """Returns latest mtGox USD rate"""
-        # Get a file-like object for the Python Web site's home page.
-        f = urllib.urlopen('http://mtgox.com/api/0/data/ticker.php')
-        # Read from the object, storing the page's contents in 's'.
-        line=f.read();
-        u=line.decode('utf-8');
-        s = json.loads(u)
-        last=str(s['ticker']['last'])
-        last += ' USD'
+	"""Returns latest mtGox USD rate"""
+	# Get a file-like object for the Python Web site's home page.
+	f = urllib.urlopen('http://mtgox.com/api/0/data/ticker.php')
+	# Read from the object, storing the page's contents in 's'.
+	line=f.read();
+	u=line.decode('utf-8');
+	s = json.loads(u)
+	last=str(s['ticker']['last'])
+	last += ' USD'
 	f.close()
 
 	pres = xmpp.Presence()
@@ -39,7 +39,7 @@ while (True):
 
 
 #	cnx.send( xmpp.Message( 'jo@joip.de' , repr(last) ) )
-	print last
+	print(last)
 	time.sleep(int(pause))
 
 cnx.disconnect()
