@@ -8,8 +8,8 @@ from itertools import chain
 # Variablen:
 
 greeting="The diff-bot on joip.de is reporting changes!"
-#url="http://www.chemie.uni-luebeck.de/InfoForStudents/3.Semester.htm" # zu ueberwachende url
 pause=60
+kurs=7
 
 login = 'bot' # @gmail.com 
 pwd   = 'xxxxxxxxxx'
@@ -29,17 +29,26 @@ while (True):
 	line=f.read();
 	u=line.decode('utf-8');
 	s = json.loads(u)
-	last=str(s['ticker']['last'])
-	last += ' USD'
+	oldkurs=kurs
+	kurs=s['ticker']['last']
+	kurs_str=str(kurs)
+	kurs_str += ' USD'
 	f.close()
-
-	pres = xmpp.Presence()
-	pres.setStatus(last)
-	cnx.send(pres)
-
-
-#	cnx.send( xmpp.Message( 'jo@joip.de' , repr(last) ) )
-	print(last)
+	
+	if kurs != oldkurs:
+		if oldkurs<kurs:
+			pres = xmpp.Presence()
+			pres.setStatus(kurs_str + " +")
+		else:
+			pres = xmpp.Presence(show='dnd')
+			pres.setStatus(kurs_str + " -")
+		cnx.send(pres)
+	else:
+		pres.setStatus(kurs_str + " =")
+                cnx.send(pres)		
+	
+#	cnx.send( xmpp.Message( 'jo@joip.de' , repr(kurs_str) ) )
+	print("updated: %s" %(kurs_str))
 	time.sleep(int(pause))
 
 cnx.disconnect()
