@@ -1,7 +1,7 @@
 #!/usr/bin/python2
 import xmpp,sys,time,os,re
 from urllib import urlopen
-import urllib, json
+import urllib, json, time
 from difflib import context_diff,ndiff
 from itertools import chain
 
@@ -10,6 +10,7 @@ from itertools import chain
 greeting="The diff-bot on joip.de is reporting changes!"
 pause=60
 kurs=7
+waitcounter=1
 
 login = 'bot' # @gmail.com 
 pwd   = 'xxxxxxxxxx'
@@ -25,16 +26,39 @@ while (True):
 	"""Returns latest mtGox USD rate"""
 	# Get a file-like object for the Python Web site's home page.
 	f = urllib.urlopen('http://mtgox.com/api/0/data/ticker.php')
+
+	#only ask for daily averages every thrity minutes
+	waitcounter-=1
+	if (waitcounter==0):
+		try:
+			f2= urllib.urlopen('http://bitcoincharts.com/t/weighted_prices.json')
+			bitcoincharts=f2.read();
+			f2.close()
+			bitcoincharts=bitcoincharts.decode('utf-8')
+			bitcoincharts = json.loads(bitcoincharts)
+		except:
+			bitcoincharts = dict({'USD': {'24h' : 'NaN'}, 'EUR': {'24h' : 'NaN'}})
+			print('error loading bitcoincharts data')
+		waitcounter=30
+
 	# Read from the object, storing the page's contents in 's'.
-	line=f.read();
-	u=line.decode('utf-8');
-	s = json.loads(u)
-	oldkurs=kurs
-	kurs=s['ticker']['last']
+	try:
+		mtgox=f.read();
+		mtgox=mtgox.decode('utf-8');
+		mtgox = json.loads(mtgox)
+		oldkurs=kurs
+		kurs=mtgox['ticker']['last']
+	except:
+		print('error loading mtgox data')
+		kurs='NaN'			
 	kurs_str=str(kurs)
 	kurs_str += ' USD'
-	f.close()
+
+	kurs_str +=' | 24h: ' + bitcoincharts['USD']['24h'] + ' USD, ' + bitcoincharts['EUR']['24h'] + ' EUR'
 	
+	
+	f.close()
+
 	if kurs != oldkurs:
 		if oldkurs<kurs:
 			pres = xmpp.Presence()
@@ -48,7 +72,7 @@ while (True):
                 cnx.send(pres)		
 	
 #	cnx.send( xmpp.Message( 'jo@joip.de' , repr(kurs_str) ) )
-	print("updated: %s" %(kurs_str))
+	print("%f: updated: %s" %(time.time(), kurs_str))
 	time.sleep(int(pause))
 
 cnx.disconnect()
